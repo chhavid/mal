@@ -1,4 +1,4 @@
-const { MalSymbol, MalValue, MalList, MalVector, MalNil } = require('./types');
+const { MalSymbol, MalList, MalVector, MalNil } = require('./types');
 
 class Reader {
   constructor(tokens) {
@@ -29,7 +29,7 @@ const read_seq = (reader, closingSymbol) => {
 
   while (reader.peek() !== closingSymbol) {
     if (reader.peek() === undefined) {
-      throw "EOF";
+      throw "unbalanced " + closingSymbol;
     }
     ast.push(read_form(reader));
   }
@@ -50,7 +50,7 @@ const read_vector = (reader) => {
 const read_atom = (reader) => {
   const token = reader.next();
   if (token.match(/^-?[0-9]+$/)) {
-    return new MalValue(parseInt(token));
+    return parseInt(token);
   };
 
   if (token === 'true') return true;

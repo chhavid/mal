@@ -19,6 +19,10 @@ class MalList extends MalValue {
     super(value);
   }
 
+  isEmpty() {
+    return this.value.length === 0;
+  }
+
   pr_str() {
     return "(" + this.value.map(x => x.pr_str()).join(' ') + ")";
   }
@@ -30,7 +34,10 @@ class MalVector extends MalValue {
   }
 
   pr_str() {
-    return '[' + this.value.map(x => x.pr_str()).join(' ') + ']';
+    return '[' + this.value.map(x => {
+      if (x instanceof MalValue) return x.pr_str();
+      return x;
+    }).join(' ') + ']';
   }
 }
 
