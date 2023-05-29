@@ -1,4 +1,4 @@
-const { MalSymbol, MalList, MalVector, MalNil } = require('./types');
+const { MalSymbol, MalList, MalVector, MalNil, MalHashMap } = require('./types');
 
 class Reader {
   constructor(tokens) {
@@ -47,6 +47,16 @@ const read_vector = (reader) => {
   return new MalVector(ast);
 };
 
+const read_object = (reader) => {
+  const ast = read_seq(reader, '}');
+
+  if (ast.length % 2 !== 0) {
+    throw 'object must contain a key value pair';
+  }
+
+  return new MalHashMap(ast);
+};
+
 const read_atom = (reader) => {
   const token = reader.next();
   if (token.match(/^-?[0-9]+$/)) {
@@ -56,6 +66,11 @@ const read_atom = (reader) => {
   if (token === 'true') return true;
   if (token === 'false') return false;
   if (token === 'nil') return new MalNil();
+  if (token[0] === ':') return token;
+  if (token[0] === '"') {
+    if (token.slice(-1) !== '"') throw 'unbalanced "';
+    return token
+  };
 
   return new MalSymbol(token);
 };
@@ -68,6 +83,9 @@ const read_form = (reader) => {
 
     case '[':
       return read_vector(reader);
+
+    case '{':
+      return read_object(reader);
 
     default:
       return read_atom(reader);
