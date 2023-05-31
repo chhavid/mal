@@ -1,7 +1,7 @@
 const readline = require('readline');
 const { read_str } = require('./reader.js');
 const { pr_str } = require('./printer.js');
-const { MalSymbol, MalList, MalVector, MalHashMap, MalNil } = require('./types.js');
+const { MalSymbol, MalList, MalVector, MalHashMap, MalNil, MalFn } = require('./types.js');
 const { Env } = require('./env.js');
 
 const rl = readline.createInterface({
@@ -61,6 +61,15 @@ const EVAL = (ast, env) => {
       }
       return EVAL(operations.slice(-1)[0], env);
 
+    case 'fn*':
+      const func = (...args) => {
+        const [, binds, exprs] = ast.value;
+        const fnEnv = new Env(env, binds, exprs);
+        fnEnv.bind(args);
+        return EVAL(exprs, fnEnv);
+      }
+      return new MalFn(func);
+
     case 'if':
       const [cond, if_block, else_block] = ast.value.slice(1);
       const predicate = EVAL(cond, env);
@@ -88,15 +97,23 @@ env.set(new MalSymbol('/'), ((...args) => args.reduce((a, b) => a / b)));
 
 env.set(new MalSymbol('list'), ((...args) => new MalList(args)));
 env.set(new MalSymbol('vector'), ((...args) => new MalVector(args)));
+env.set(new MalSymbol('count'), (a => {
+  if (a instanceof MalNil) return 0;
+  return a.value.length;
+}));
 
-env.set(new MalSymbol('count'), (a => a.value.length));
+env.set(new MalSymbol('not'), (a => {
+  if (a instanceof MalNil || a === false) return true;
+  return false;
+}));
 
 env.set(new MalSymbol('>='), ((a, b) => a >= b));
 env.set(new MalSymbol('<='), ((a, b) => a <= b));
 env.set(new MalSymbol('>'), ((a, b) => a > b));
 env.set(new MalSymbol('<'), ((a, b) => a < b));
 env.set(new MalSymbol('='), ((...args) => args.every(a => a === args[0])));
-env.set(new MalSymbol('empty?'), ((...args) => !args.length));
+env.set(new MalSymbol('empty?'), ((...args) => !args[0].value.length
+));
 env.set(new MalSymbol('list?'), (args => args instanceof MalList));
 
 env.set(new MalSymbol('prn'), (...args) => {

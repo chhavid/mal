@@ -54,6 +54,20 @@ class MalNil extends MalValue {
   }
 }
 
+class MalFn extends MalValue {
+  constructor(value) {
+    super(value);
+  }
+
+  pr_str() {
+    return "#<function>";
+  }
+
+  apply(_, args) {
+    return this.value(...args);
+  }
+}
+
 class MalHashMap extends MalValue {
   constructor(value) {
     super(value);
@@ -67,4 +81,4 @@ class MalHashMap extends MalValue {
   }
 }
 
-module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap };
+module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap, MalFn };
