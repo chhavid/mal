@@ -1,4 +1,4 @@
-const { MalSymbol, MalList, MalVector, MalNil, MalHashMap } = require('./types');
+const { MalSymbol, MalList, MalVector, MalNil, MalHashMap, MalString } = require('./types');
 
 class Reader {
   constructor(tokens) {
@@ -57,6 +57,8 @@ const read_object = (reader) => {
   return new MalHashMap(ast);
 };
 
+const parseStr = (str) => str.slice(1, -1);
+
 const read_atom = (reader) => {
   const token = reader.next();
   if (token.match(/^-?[0-9]+$/)) {
@@ -69,7 +71,7 @@ const read_atom = (reader) => {
   if (token[0] === ':') return token;
   if (token[0] === '"') {
     if (token.slice(-1) !== '"') throw 'unbalanced "';
-    return token
+    return new MalString(parseStr(token));
   };
 
   return new MalSymbol(token);

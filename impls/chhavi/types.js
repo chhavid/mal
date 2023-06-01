@@ -1,10 +1,16 @@
+const { isDeepStrictEqual } = require('util');
+
 class MalValue {
   constructor(value) {
     this.value = value;
   }
 
-  pr_str() {
+  toString() {
     return this.value.toString();
+  }
+
+  equals(other) {
+    return other instanceof MalValue && isDeepStrictEqual(other.value, this.value);
   }
 }
 
@@ -23,9 +29,9 @@ class MalList extends MalValue {
     return this.value.length === 0;
   }
 
-  pr_str() {
+  toString() {
     return "(" + this.value.map(x => {
-      if (x instanceof MalValue) return x.pr_str();
+      if (x instanceof MalValue) return x.toString();
       return x;
     }).join(' ') + ")";
   }
@@ -36,9 +42,9 @@ class MalVector extends MalValue {
     super(value);
   }
 
-  pr_str() {
+  toString() {
     return '[' + this.value.map(x => {
-      if (x instanceof MalValue) return x.pr_str();
+      if (x instanceof MalValue) return x.toString();
       return x;
     }).join(' ') + ']';
   }
@@ -49,8 +55,18 @@ class MalNil extends MalValue {
     super(null);
   }
 
-  pr_str() {
+  toString() {
     return "nil";
+  }
+}
+
+class MalString extends MalValue {
+  constructor(value) {
+    super(value);
+  }
+
+  toString() {
+    return '"' + this.value + '"';
   }
 }
 
@@ -59,7 +75,7 @@ class MalFn extends MalValue {
     super(value);
   }
 
-  pr_str() {
+  toString() {
     return "#<function>";
   }
 
@@ -73,12 +89,12 @@ class MalHashMap extends MalValue {
     super(value);
   }
 
-  pr_str() {
+  toString() {
     return '{' + this.value.map(x => {
-      if (x instanceof MalValue) return x.pr_str();
+      if (x instanceof MalValue) return x.toString();
       return x;
     }).join(' ') + '}';
   }
 }
 
-module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap, MalFn };
+module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap, MalFn, MalString };

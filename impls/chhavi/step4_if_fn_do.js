@@ -1,8 +1,9 @@
 const readline = require('readline');
 const { read_str } = require('./reader.js');
 const { pr_str } = require('./printer.js');
-const { MalSymbol, MalList, MalVector, MalHashMap, MalNil, MalFn } = require('./types.js');
+const { MalSymbol, MalList, MalVector, MalHashMap, MalNil, MalFn, MalString, MalValue } = require('./types.js');
 const { Env } = require('./env.js');
+const { isDeepStrictEqual } = require('util');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -55,11 +56,11 @@ const EVAL = (ast, env) => {
       return EVAL(ast.value[2], newEnv);
 
     case 'do':
-      const operations = ast.value.slice(1);
-      for (let i = 0; i < operations.length - 1; i++) {
-        EVAL(operations[i], env);
-      }
-      return EVAL(operations.slice(-1)[0], env);
+      const expressions = ast.value.slice(1);
+      expressions.slice(0, -1).forEach(expression => {
+        EVAL(expression, env);
+      })
+      return EVAL(expressions.slice(-1)[0], env);
 
     case 'fn*':
       const func = (...args) => {
@@ -90,11 +91,12 @@ const EVAL = (ast, env) => {
 const PRINT = malValue => pr_str(malValue);
 
 const env = new Env();
-env.set(new MalSymbol('+'), ((...args) => args.reduce((a, b) => a + b)));
-env.set(new MalSymbol('*'), ((...args) => args.reduce((a, b) => a * b)));
-env.set(new MalSymbol('-'), ((...args) => args.reduce((a, b) => a - b)));
-env.set(new MalSymbol('/'), ((...args) => args.reduce((a, b) => a / b)));
+env.set(new MalSymbol('+'), (...args) => args.reduce((a, b) => a + b));
+env.set(new MalSymbol('*'), (...args) => args.reduce((a, b) => a * b));
+env.set(new MalSymbol('-'), (...args) => args.reduce((a, b) => a - b));
+env.set(new MalSymbol('/'), (...args) => args.reduce((a, b) => a / b));
 
+env.set(new MalSymbol('str'), (...args) => new MalString((args.map(a => a.value)).join('')));
 env.set(new MalSymbol('list'), ((...args) => new MalList(args)));
 env.set(new MalSymbol('vector'), ((...args) => new MalVector(args)));
 env.set(new MalSymbol('count'), (a => {
@@ -111,18 +113,25 @@ env.set(new MalSymbol('>='), ((a, b) => a >= b));
 env.set(new MalSymbol('<='), ((a, b) => a <= b));
 env.set(new MalSymbol('>'), ((a, b) => a > b));
 env.set(new MalSymbol('<'), ((a, b) => a < b));
-env.set(new MalSymbol('='), ((...args) => args.every(a => a === args[0])));
+env.set(new MalSymbol('='), ((...args) => args.every(a => isDeepStrictEqual(a, args[0]))));
+
 env.set(new MalSymbol('empty?'), ((...args) => !args[0].value.length
 ));
 env.set(new MalSymbol('list?'), (args => args instanceof MalList));
 
 env.set(new MalSymbol('prn'), (...args) => {
-  console.log(...args);
+  console.log(...args.map(a => a instanceof MalValue ? a.toString() : a));
   return new MalNil();
 });
 
+env.set(new MalSymbol('pr-str'), (...args) => {
+  const string = args.map((arg) => arg.toString()).join(' ');
+  const updated = string.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+  return new MalString(updated);
+});
+
 env.set(new MalSymbol('println'), (...args) => {
-  console.log(...args, '\n');
+  console.log(...args.map(a => a instanceof MalValue ? a.value : a));
   return new MalNil();
 });
 
