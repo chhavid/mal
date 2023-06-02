@@ -1,3 +1,5 @@
+const { MalList } = require('./types');
+
 class Env {
   #outer;
   constructor(outer, binds = [], exprs = []) {
@@ -12,9 +14,19 @@ class Env {
   }
 
   bind(args) {
-    args.forEach((e, i) => {
-      this.set(this.binds.value[i], e);
-    })
+    const paramsLength = this.binds.value.length;
+
+    for (let i = 0; i < paramsLength; i++) {
+      const value = this.binds.value[i].value;
+
+      if (value === '&') {
+        const symbol = this.binds.value[i + 1];
+        const rest = args.slice(i);
+        return this.set(symbol, new MalList(rest));
+      }
+
+      this.set(this.binds.value[i], args[i]);
+    }
   }
 
   find(symbol) {

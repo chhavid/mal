@@ -3,7 +3,7 @@ const { read_str } = require('./reader.js');
 const { pr_str } = require('./printer.js');
 const { MalSymbol, MalList, MalVector, MalHashMap, MalNil, MalFn, MalString, MalValue } = require('./types.js');
 const { Env } = require('./env.js');
-const { isDeepStrictEqual } = require('util');
+const { ns } = require('./core.js');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -91,48 +91,9 @@ const EVAL = (ast, env) => {
 const PRINT = malValue => pr_str(malValue);
 
 const env = new Env();
-env.set(new MalSymbol('+'), (...args) => args.reduce((a, b) => a + b));
-env.set(new MalSymbol('*'), (...args) => args.reduce((a, b) => a * b));
-env.set(new MalSymbol('-'), (...args) => args.reduce((a, b) => a - b));
-env.set(new MalSymbol('/'), (...args) => args.reduce((a, b) => a / b));
 
-env.set(new MalSymbol('str'), (...args) => new MalString((args.map(a => a.value)).join('')));
-env.set(new MalSymbol('list'), ((...args) => new MalList(args)));
-env.set(new MalSymbol('vector'), ((...args) => new MalVector(args)));
-env.set(new MalSymbol('count'), (a => {
-  if (a instanceof MalNil) return 0;
-  return a.value.length;
-}));
-
-env.set(new MalSymbol('not'), (a => {
-  if (a instanceof MalNil || a === false) return true;
-  return false;
-}));
-
-env.set(new MalSymbol('>='), ((a, b) => a >= b));
-env.set(new MalSymbol('<='), ((a, b) => a <= b));
-env.set(new MalSymbol('>'), ((a, b) => a > b));
-env.set(new MalSymbol('<'), ((a, b) => a < b));
-env.set(new MalSymbol('='), ((...args) => args.every(a => isDeepStrictEqual(a, args[0]))));
-
-env.set(new MalSymbol('empty?'), ((...args) => !args[0].value.length
-));
-env.set(new MalSymbol('list?'), (args => args instanceof MalList));
-
-env.set(new MalSymbol('prn'), (...args) => {
-  console.log(...args.map(a => a instanceof MalValue ? a.toString() : a));
-  return new MalNil();
-});
-
-env.set(new MalSymbol('pr-str'), (...args) => {
-  const string = args.map((arg) => arg.toString()).join(' ');
-  const updated = string.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
-  return new MalString(updated);
-});
-
-env.set(new MalSymbol('println'), (...args) => {
-  console.log(...args.map(a => a instanceof MalValue ? a.value : a));
-  return new MalNil();
+Object.keys(ns).forEach(symbol => {
+  env.set(new MalSymbol(symbol), ns[symbol]);
 });
 
 const rep = str => PRINT(EVAL(READ(str), env));
