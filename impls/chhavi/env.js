@@ -14,18 +14,18 @@ class Env {
   }
 
   bind(args) {
-    const paramsLength = this.binds.value.length;
+    const paramsLength = this.binds.length;
 
     for (let i = 0; i < paramsLength; i++) {
-      const value = this.binds.value[i].value;
+      const value = this.binds[i].value;
 
       if (value === '&') {
-        const symbol = this.binds.value[i + 1];
+        const symbol = this.binds[i + 1];
         const rest = args.slice(i);
         return this.set(symbol, new MalList(rest));
       }
 
-      this.set(this.binds.value[i], args[i]);
+      this.set(this.binds[i], args[i]);
     }
   }
 

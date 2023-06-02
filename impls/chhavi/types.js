@@ -14,13 +14,19 @@ class MalValue {
   }
 }
 
+class MalIterable extends MalValue {
+  constructor(value) {
+    super(value);
+  }
+}
+
 class MalSymbol extends MalValue {
   constructor(value) {
     super(value);
   }
 }
 
-class MalList extends MalValue {
+class MalList extends MalIterable {
   constructor(value) {
     super(value);
   }
@@ -37,7 +43,7 @@ class MalList extends MalValue {
   }
 }
 
-class MalVector extends MalValue {
+class MalVector extends MalIterable {
   constructor(value) {
     super(value);
   }
@@ -71,8 +77,10 @@ class MalString extends MalValue {
 }
 
 class MalFn extends MalValue {
-  constructor(value) {
-    super(value);
+  constructor(ast, binds, env) {
+    super(ast);
+    this.binds = binds;
+    this.env = env;
   }
 
   toString() {
@@ -84,7 +92,7 @@ class MalFn extends MalValue {
   }
 }
 
-class MalHashMap extends MalValue {
+class MalHashMap extends MalIterable {
   constructor(value) {
     super(value);
   }
@@ -97,4 +105,4 @@ class MalHashMap extends MalValue {
   }
 }
 
-module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap, MalFn, MalString };
+module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap, MalFn, MalString, MalIterable };

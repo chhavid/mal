@@ -10,6 +10,12 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
+const setEnv = (env) => {
+  Object.keys(ns).forEach(symbol => {
+    env.set(new MalSymbol(symbol), ns[symbol]);
+  });
+};
+
 const eval_ast = (ast, env) => {
   if (ast instanceof MalSymbol) {
     return env.get(ast);
@@ -65,7 +71,7 @@ const EVAL = (ast, env) => {
     case 'fn*':
       const func = (...args) => {
         const [, binds, exprs] = ast.value;
-        const fnEnv = new Env(env, binds, exprs);
+        const fnEnv = new Env(env, binds.value, exprs);
         fnEnv.bind(args);
         return EVAL(exprs, fnEnv);
       }
@@ -91,10 +97,7 @@ const EVAL = (ast, env) => {
 const PRINT = malValue => pr_str(malValue);
 
 const env = new Env();
-
-Object.keys(ns).forEach(symbol => {
-  env.set(new MalSymbol(symbol), ns[symbol]);
-});
+setEnv(env);
 
 const rep = str => PRINT(EVAL(READ(str), env));
 
