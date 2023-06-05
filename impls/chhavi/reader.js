@@ -23,6 +23,18 @@ const tokenize = (str) => {
   return [...str.matchAll(re)].map(x => x[1]).slice(0, -1);
 };
 
+const createMalstring = (str) => {
+  const newStr = str.slice(1, -1).replace(/\\(.)/g, (_, c) => { return c === "n" ? "\n" : c });
+  return new MalString(newStr);
+};
+
+const prependSymbol = (reader, symbolStr) => {
+  reader.next();
+  const symbol = new MalSymbol(symbolStr);
+  const newAst = read_form(reader);
+  return new MalList([symbol, newAst]);
+}
+
 const read_seq = (reader, closingSymbol) => {
   const ast = [];
   reader.next();
@@ -57,8 +69,6 @@ const read_object = (reader) => {
   return new MalHashMap(ast);
 };
 
-const parseStr = (str) => str.slice(1, -1);
-
 const read_atom = (reader) => {
   const token = reader.next();
   if (token.match(/^-?[0-9]+$/)) {
@@ -68,10 +78,10 @@ const read_atom = (reader) => {
   if (token === 'true') return true;
   if (token === 'false') return false;
   if (token === 'nil') return new MalNil();
-  if (token[0] === ':') return token;
-  if (token[0] === '"') {
+  if (token.startsWith(':')) return token;
+  if (token.startsWith('"')) {
     if (token.slice(-1) !== '"') throw 'unbalanced "';
-    return new MalString(parseStr(token));
+    return createMalstring(token);
   };
 
   return new MalSymbol(token);
@@ -79,7 +89,7 @@ const read_atom = (reader) => {
 
 const read_form = (reader) => {
   const token = reader.peek();
-  switch (token) {
+  switch (token[0]) {
     case '(':
       return read_list(reader);
 
@@ -89,6 +99,11 @@ const read_form = (reader) => {
     case '{':
       return read_object(reader);
 
+    case ';':
+      reader.next();
+      return new MalNil();
+    case '@':
+      return prependSymbol(reader, "deref");
     default:
       return read_atom(reader);
   }

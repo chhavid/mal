@@ -1,6 +1,8 @@
 const { isDeepStrictEqual } = require('util');
-const { MalList, MalVector, MalNil, MalString, MalValue, MalIterable } =
+const { MalList, MalVector, MalNil, MalString, MalValue, MalIterable, MalAtom } =
   require('./types.js');
+const { read_str } = require('./reader.js');
+const fs = require('fs');
 
 const ns = {
   '+': (...args) => args.reduce((a, b) => a + b),
@@ -43,6 +45,14 @@ const ns = {
     console.log(updated);
     return new MalNil();
   },
+  'read-string': string => read_str(string.value),
+  'slurp': fileName =>
+    new MalString(fs.readFileSync(fileName.value, 'utf8')),
+  'atom': value => new MalAtom(value),
+  'atom?': value => value instanceof MalAtom,
+  'deref': atom => atom.deref(),
+  'reset!': (atom, value) => atom.reset(value),
+  'swap!': (atom, fn, ...args) => atom.swap(fn, args),
 }
 
 module.exports = { ns };

@@ -14,19 +14,17 @@ class Env {
   }
 
   bind(args) {
-    const paramsLength = this.binds.length;
-
-    for (let i = 0; i < paramsLength; i++) {
-      const value = this.binds[i].value;
-
-      if (value === '&') {
-        const symbol = this.binds[i + 1];
-        const rest = args.slice(i);
-        return this.set(symbol, new MalList(rest));
-      }
-
+    let i = 0;
+    while (i < this.binds.length && this.binds[i].value !== '&') {
       this.set(this.binds[i], args[i]);
+      i++;
     }
+
+    if (i >= this.binds.length) return;
+
+    const symbol = this.binds[i + 1];
+    const rest = args.slice(i);
+    this.set(symbol, new MalList(rest));
   }
 
   find(symbol) {

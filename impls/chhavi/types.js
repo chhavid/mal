@@ -1,5 +1,11 @@
 const { isDeepStrictEqual } = require('util');
 
+const pr_str = (malValue) => {
+  if (malValue instanceof MalValue)
+    return malValue.toString(true);
+  return malValue;
+};
+
 class MalValue {
   constructor(value) {
     this.value = value;
@@ -37,7 +43,7 @@ class MalList extends MalIterable {
 
   toString() {
     return "(" + this.value.map(x => {
-      if (x instanceof MalValue) return x.toString();
+      if (x instanceof MalValue) return pr_str(x);
       return x;
     }).join(' ') + ")";
   }
@@ -71,16 +77,23 @@ class MalString extends MalValue {
     super(value);
   }
 
-  toString() {
-    return '"' + this.value + '"';
+  toString(printReadably) {
+    if (printReadably) {
+      return '"' + this.value
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, "\\n") + '"';
+    }
+    return this.value.toString();
   }
 }
 
 class MalFn extends MalValue {
-  constructor(ast, binds, env) {
+  constructor(ast, binds, env, fn = () => { }) {
     super(ast);
     this.binds = binds;
     this.env = env;
+    this.fn = fn;
   }
 
   toString() {
@@ -88,7 +101,7 @@ class MalFn extends MalValue {
   }
 
   apply(_, args) {
-    return this.value(...args);
+    return this.fn.apply(null, args);
   }
 }
 
@@ -99,10 +112,34 @@ class MalHashMap extends MalIterable {
 
   toString() {
     return '{' + this.value.map(x => {
-      if (x instanceof MalValue) return x.toString();
+      if (x instanceof MalValue) return pr_str(x);
       return x;
     }).join(' ') + '}';
   }
 }
 
-module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap, MalFn, MalString, MalIterable };
+class MalAtom extends MalValue {
+  constructor(value) {
+    super(value);
+  }
+
+  toString(printReadably) {
+    return ("(atom " + pr_str(this.value, printReadably) + ')')
+  }
+
+  deref() {
+    return this.value;
+  }
+
+  reset(newValue) {
+    this.value = newValue;
+    return this.value;
+  }
+
+  swap(fn, args) {
+    this.value = fn.apply(null, [this.value, ...args])
+    return this.value;
+  }
+}
+
+module.exports = { MalSymbol, MalValue, MalList, MalVector, MalNil, MalHashMap, MalFn, MalString, MalIterable, pr_str, MalAtom };
