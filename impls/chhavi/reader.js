@@ -24,7 +24,8 @@ const tokenize = (str) => {
 };
 
 const createMalstring = (str) => {
-  const newStr = str.slice(1, -1).replace(/\\(.)/g, (_, c) => { return c === "n" ? "\n" : c });
+  const newStr = str.slice(1, -1).replace(/\\(.)/g, (_, c) =>
+    c === "n" ? "\n" : c);
   return new MalString(newStr);
 };
 
@@ -79,6 +80,7 @@ const read_atom = (reader) => {
   if (token === 'false') return false;
   if (token === 'nil') return new MalNil();
   if (token.startsWith(':')) return token;
+  if (token.startsWith(';')) return new MalNil();
   if (token.startsWith('"')) {
     if (token.slice(-1) !== '"') throw 'unbalanced "';
     return createMalstring(token);
@@ -89,7 +91,7 @@ const read_atom = (reader) => {
 
 const read_form = (reader) => {
   const token = reader.peek();
-  switch (token[0]) {
+  switch (token) {
     case '(':
       return read_list(reader);
 
@@ -98,12 +100,16 @@ const read_form = (reader) => {
 
     case '{':
       return read_object(reader);
-
-    case ';':
-      reader.next();
-      return new MalNil();
     case '@':
       return prependSymbol(reader, "deref");
+    case "'":
+      return prependSymbol(reader, "quote");
+    case "`":
+      return prependSymbol(reader, "quasiquote");
+    case "~":
+      return prependSymbol(reader, "unquote");
+    case "~@":
+      return prependSymbol(reader, "splice-unquote");
     default:
       return read_atom(reader);
   }

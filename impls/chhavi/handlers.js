@@ -1,5 +1,5 @@
 const { Env } = require('./env');
-const { MalNil, MalSymbol, MalList, MalFn } = require('./types');
+const { MalNil, MalSymbol, MalList, MalFn, MalHashMap, MalIterable } = require('./types');
 
 const handleDef = (ast, env, EVAL) => {
   env.set(ast.value[1], EVAL(ast.value[2], env));
@@ -46,9 +46,37 @@ const handleFn = (ast, env, EVAL) => {
   const func = (...args) => {
     const fnEnv = new Env(env, binds.value, exprs);
     fnEnv.bind(args);
-    return EVAL(ast.value[2], fnEnv);
+    return EVAL(doForms, fnEnv);
   }
   return new MalFn(doForms, binds.value, env, func);
 };
 
-module.exports = { handleFn, handleDo, handleDef, handleIf, handleLet }
+const isUnquote = (ast) => ast instanceof MalList && ast.beginsWith('unquote');
+
+const getResult = (elt, result) => {
+  if (elt instanceof MalList && elt.beginsWith("splice-unquote")) {
+    return new MalList([new MalSymbol("concat"), elt.value[1], result]);
+  }
+  return new MalList([new MalSymbol("cons"), handleQuasiquote(elt), result]);
+};
+
+const handleQuasiquote = (ast) => {
+  if (isUnquote(ast)) return ast.value[1];
+
+  if (ast instanceof MalSymbol || ast instanceof MalHashMap)
+    return new MalList([new MalSymbol("quote"), ast]);
+
+  if (ast instanceof MalIterable) {
+    let result = new MalList([]);
+
+    for (let i = ast.value.length - 1; i >= 0; i--) {
+      result = getResult(ast.value[i], result);
+    }
+    if (ast instanceof MalList) return result;
+
+    return new MalList([new MalSymbol("vec"), result]);
+  }
+  return ast;
+};
+
+module.exports = { handleFn, handleDo, handleDef, handleIf, handleLet, handleQuasiquote }

@@ -24,6 +24,14 @@ class MalIterable extends MalValue {
   constructor(value) {
     super(value);
   }
+
+  isEmpty() {
+    return this.value.length === 0;
+  }
+
+  beginsWith(symbol) {
+    return !this.isEmpty() && this.value[0].value === symbol;
+  }
 }
 
 class MalSymbol extends MalValue {
@@ -35,10 +43,6 @@ class MalSymbol extends MalValue {
 class MalList extends MalIterable {
   constructor(value) {
     super(value);
-  }
-
-  isEmpty() {
-    return this.value.length === 0;
   }
 
   toString() {
@@ -56,7 +60,7 @@ class MalVector extends MalIterable {
 
   toString() {
     return '[' + this.value.map(x => {
-      if (x instanceof MalValue) return x.toString();
+      if (x instanceof MalValue) return pr_str(x);
       return x;
     }).join(' ') + ']';
   }

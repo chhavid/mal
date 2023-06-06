@@ -4,7 +4,7 @@ const { pr_str } = require('./printer.js');
 const { MalSymbol, MalList, MalVector, MalHashMap, MalFn, MalString } = require('./types.js');
 const { Env } = require('./env.js');
 const { ns } = require('./core.js');
-const { handleDef, handleDo, handleLet, handleFn, handleIf } = require('./handlers.js');
+const { handleDef, handleDo, handleLet, handleFn, handleIf, handleQuasiquote } = require('./handlers.js');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -69,6 +69,16 @@ const EVAL = (ast, env) => {
 
       case 'if':
         ast = handleIf(ast, env, EVAL);
+        break;
+
+      case 'quote':
+        return ast.value[1];
+
+      case 'quasiquoteexpand':
+        return handleQuasiquote(ast.value[1]);
+
+      case 'quasiquote':
+        ast = handleQuasiquote(ast.value[1]);
         break;
 
       default:
