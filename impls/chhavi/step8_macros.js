@@ -4,7 +4,7 @@ const { pr_str } = require('./printer.js');
 const { MalSymbol, MalList, MalVector, MalHashMap, MalFn, MalString } = require('./types.js');
 const { Env } = require('./env.js');
 const { ns } = require('./core.js');
-const { handleDef, handleDo, handleLet, handleFn, handleIf, handleQuasiquote } = require('./handlers.js');
+const { handleDef, handleDo, handleLet, handleFn, handleIf, handleQuasiquote, handleDefMacro, macroExpand } = require('./handlers.js');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -45,15 +45,23 @@ const READ = str => read_str(str);
 
 const EVAL = (ast, env) => {
   while (true) {
-    if (!(ast instanceof MalList)) {
+    if (!(ast instanceof MalList))
       return eval_ast(ast, env);
-    }
+
 
     if (ast.isEmpty()) return ast;
+
+    ast = macroExpand(ast, env);
+
+    if (!(ast instanceof MalList))
+      return eval_ast(ast, env);
 
     switch (ast.value[0].value) {
       case 'def!':
         return handleDef(ast, env, EVAL);
+
+      case 'defmacro!':
+        return handleDefMacro(ast, env, EVAL);
 
       case 'let*':
         [ast, env] = handleLet(ast, env, EVAL);
@@ -77,6 +85,9 @@ const EVAL = (ast, env) => {
       case 'quasiquoteexpand':
         return handleQuasiquote(ast.value[1]);
 
+      case 'macroexpand':
+        return macroExpand(ast.value[1], env);
+
       case 'quasiquote':
         ast = handleQuasiquote(ast.value[1]);
         break;
@@ -99,6 +110,8 @@ const PRINT = malValue => pr_str(malValue);
 const env = new Env();
 setEnv(env);
 
+env.set(new MalSymbol('eval'), (ast) => EVAL(ast, env));
+
 const rep = str => {
   return PRINT(EVAL(READ(str), env))
 };
@@ -114,6 +127,8 @@ const repl = () =>
   });
 
 rep('(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))');
+
+rep("(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))")
 
 if (process.argv.length >= 3) {
   const args = process.argv.slice(3);

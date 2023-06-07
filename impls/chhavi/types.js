@@ -32,6 +32,20 @@ class MalIterable extends MalValue {
   beginsWith(symbol) {
     return !this.isEmpty() && this.value[0].value === symbol;
   }
+
+  nth(n) {
+    if (n >= this.value.length) throw "index out of range";
+    return this.value[n];
+  }
+
+  first() {
+    if (this.isEmpty()) return new MalNil();
+    return this.value[0];
+  }
+
+  rest() {
+    return new MalList(this.value.slice(1));
+  }
 }
 
 class MalSymbol extends MalValue {
@@ -93,11 +107,12 @@ class MalString extends MalValue {
 }
 
 class MalFn extends MalValue {
-  constructor(ast, binds, env, fn = () => { }) {
+  constructor(ast, binds, env, fn = () => { }, isMacro = false) {
     super(ast);
     this.binds = binds;
     this.env = env;
     this.fn = fn;
+    this.isMacro = isMacro;
   }
 
   toString() {

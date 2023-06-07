@@ -6,6 +6,33 @@ const handleDef = (ast, env, EVAL) => {
   return env.get(ast.value[1]);
 };
 
+const handleDefMacro = (ast, env, EVAL) => {
+  const macro = EVAL(ast.value[2], env);
+  macro.isMacro = true;
+  env.set(ast.value[1], macro);
+  return env.get(ast.value[1]);
+};
+
+const isMacroCall = (ast, env) => {
+  try {
+    return ast instanceof MalList &&
+      !ast.isEmpty() &&
+      ast.value[0] instanceof MalSymbol &&
+      env.get(ast.value[0]).isMacro;
+  } catch (error) {
+    return false;
+  }
+};
+
+const macroExpand = (ast, env) => {
+  while (isMacroCall(ast, env)) {
+    const macro = env.get(ast.value[0]);
+    ast = macro.apply(null, ast.value.slice(1));
+  }
+
+  return ast;
+};
+
 const handleIf = (ast, env, EVAL) => {
   const [cond, if_block, else_block] = ast.value.slice(1);
   const predicate = EVAL(cond, env);
@@ -79,4 +106,4 @@ const handleQuasiquote = (ast) => {
   return ast;
 };
 
-module.exports = { handleFn, handleDo, handleDef, handleIf, handleLet, handleQuasiquote }
+module.exports = { handleFn, handleDo, handleDef, handleIf, handleLet, handleQuasiquote, handleDefMacro, macroExpand }
